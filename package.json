@@ -1,0 +1,12 @@
+{
+  "name": "sds_analyser",
+  "version": "1.0.0",
+  "description": "SDS file analyser",
+  "main": "qtool_analyser.js",
+  "scripts": {
+    "start": "node qtool_analyser.js"
+  },
+  "dependencies": {
+    "sqlite3": "^3.1.8"
+  }
+}
