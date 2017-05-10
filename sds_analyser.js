@@ -1,8 +1,11 @@
-const fs    = require('fs');
-const path  = require('path');
-const exec  = require('child_process').exec;
+const fs        = require('fs');
+const path      = require('path');
+const exec      = require('child_process').exec;
 
-const sdsFile  = process.argv[2];
+const config    = require('./config.json');
+const filters   = config.filters;
+
+const sdsFile   = process.argv[2];
 if(sdsFile === undefined) {
     throw new Error("No sdsFile in script arguments");
 }
@@ -13,14 +16,9 @@ function parse(str) {
     let results, PPDS_Name, CurrentPDS;
     let parseMap = new Map();
 
-    const tObject = {};
-
     while( ( results = noRegex.exec(str) ) !== null) {
-        const varName     = results[1];
-        const varResult   = results[2];
-        tObject[varName]  = varResult;
+        parseMap.set(results[1],results[2]);
     }
-    parseMap.set('pds_vars',tObject);
 
     while( ( results = PDSregex.exec(str) ) !== null) {
         let varName     = results[1];
@@ -73,8 +71,6 @@ function parse(str) {
     console.log(stdout);
 });*/
 
-console.time('start_parse');
-
 const buf = fs.readFileSync('log.txt');
 const lineStr = buf.toString().split('\n');
 const pdsTables = [];
@@ -92,7 +88,7 @@ lineStr.forEach( str => {
         finalStr+=str;
     }
 });
-const finalTables = [];
+let finalTables = [];
 
 for(let i = 0;i<pdsTables.length;i++) {
     const str = parse(pdsTables[i]);
@@ -101,6 +97,48 @@ for(let i = 0;i<pdsTables.length;i++) {
     }
 }
 
-console.timeEnd('start_parse');
+finalTables = finalTables.filter( PDS => {
+    for(let k in filters) {
+        let fStr = filters[k];
+        let fRegex;
+        let find = false;
 
-console.log(finalTables[0]);
+        try {
+            if(PDS.get('udata').get('values').has(k) === true) {
+                fRegex = PDS.get('udata').get('values').get(k);
+                find = true;
+            }
+        }
+        catch(Err) {};
+
+        try {
+            if(PDS.get('udata').has(k) === true && find === false) {
+                fRegex = PDS.get('udata').get(k);
+                find = true;
+            }
+        }
+        catch(Err) {};
+
+        if(find === false) {
+            if(PDS.has(k) === false) return false;
+            fRegex = PDS.get(k);
+        }
+
+        try {
+            if(new RegExp(fStr).test(fRegex) === false) return false;
+        }
+        catch(Err) {
+            return false;
+        }
+    }
+    return true;
+})
+
+const wS = fs.createWriteStream('final_pds.txt');
+finalTables.forEach( eMap => {
+    wS.write(JSON.stringify([...eMap])+"\n");
+});
+
+wS.on('end',() => {
+    process.exit(0);
+});
