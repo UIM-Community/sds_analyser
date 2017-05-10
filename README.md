@@ -1,7 +1,13 @@
 # sds_analyser
 CA UIM - SDS file (queue) analyser created with NodeJS
 
-> Prototype version
+> Prototype version (loading of .sds file is not implemented).
+
+## How to use 
+
+```
+node sds_analyser.js queue.sds
+```
 
 ## Requirement 
 
@@ -9,5 +15,4 @@ CA UIM - SDS file (queue) analyser created with NodeJS
 
 ## Roadmap 
 
-- Create a configuration file with filter (transpile this to a Map object).
-- Save all PDS object in a SQLite table!
+- Save all PDS object in a SQLite table (problem with the proxy at my work, i dont success to compile sqlite3 correctly).
